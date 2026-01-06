@@ -31,7 +31,7 @@ const App: React.FC = () => {
   // Sync notifications for delivery
   useEffect(() => {
     if (user?.role === UserRole.DELIVERY) {
-      const cloudServices = services.filter(s => s.status === ServiceStatus.PENDING).length;
+      const cloudServices = services.filter((s: Service) => s.status === ServiceStatus.PENDING).length;
       if (cloudServices > prevServicesCount.current) {
         new Notification("¡Nuevo Servicio!", {
           body: `Hay ${cloudServices} servicios disponibles en la nube.`,
@@ -51,7 +51,8 @@ const App: React.FC = () => {
       setRiders(await getStoredRiders());
       setServices(await getStoredServices());
       setCustomers(await getStoredCustomers());
-      prevServicesCount.current = (await getStoredServices()).filter(s => s.status === ServiceStatus.PENDING).length;
+      const initialServices = await getStoredServices();
+      prevServicesCount.current = initialServices.filter((s: Service) => s.status === ServiceStatus.PENDING).length;
     };
     load();
     
@@ -117,7 +118,7 @@ const App: React.FC = () => {
     setError('');
 
     if (username === 'admin' && password === 'admin') {
-      const session = { id: 'admin', username: 'admin', role: UserRole.ADMIN, name: 'Administrador' };
+      const session: UserSession = { id: 'admin', username: 'admin', role: UserRole.ADMIN, name: 'Administrador' };
       setUser(session);
       localStorage.setItem('quicklink_session', JSON.stringify(session));
       return;
@@ -125,7 +126,7 @@ const App: React.FC = () => {
 
     const foundRider = riders.find(r => r.username === username && r.password === password);
     if (foundRider) {
-      const session = { id: foundRider.id, username: foundRider.username, role: UserRole.DELIVERY, name: foundRider.name };
+      const session: UserSession = { id: foundRider.id, username: foundRider.username, role: UserRole.DELIVERY, name: foundRider.name };
       setUser(session);
       localStorage.setItem('quicklink_session', JSON.stringify(session));
       return;
@@ -198,7 +199,7 @@ const App: React.FC = () => {
 
   const handleClearOldServices = () => {
     const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-    const filtered = services.filter(s => {
+    const filtered = services.filter((s: Service) => {
       if (s.status !== ServiceStatus.COMPLETED) return true;
       return s.createdAt > thirtyDaysAgo;
     });
@@ -243,7 +244,6 @@ const App: React.FC = () => {
     setServices(prev => prev.map(s => 
       s.id === serviceId ? { ...s, status: ServiceStatus.COMPLETED, completedAt: Date.now() } : s
     ));
-    // Important: Update the rider's lastCompletedAt to start the vacancy timer
     if (user) {
       setRiders(prev => prev.map(r => 
         r.id === user.id ? { ...r, lastCompletedAt: Date.now(), status: RiderStatus.AVAILABLE, lastStatusChange: Date.now() } : r
@@ -316,7 +316,7 @@ const App: React.FC = () => {
           onDeleteRider={deleteRider}
           onDeleteService={deleteService}
           onDeleteCustomer={deleteCustomer}
-          onAssignService={(sId, rId) => {
+          onAssignService={(sId: string, rId: string) => {
             setServices(services.map(s => s.id === sId ? { ...s, assignedToRiderId: rId, status: ServiceStatus.ASSIGNED } : s));
           }}
           onImportData={handleImportData}
